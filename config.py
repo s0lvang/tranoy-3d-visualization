@@ -15,16 +15,20 @@ class Config:
 
 
 def tranoy_example() -> Config:
-    easting =  527372.01
-    northing = 7563449.49
+    easting = 527304.36 
+    northing = 7563388.55 
     return Config(
         viewpoint=(easting, northing),
         house_polygon=[
-            (easting + 50, northing - 30),
-            (easting + 50, northing - 50),
-            (easting + 30, northing - 50),
-            (easting + 30, northing - 30),
+            (easting + 30.0, northing + 25.0),
+            (easting + 37.5, northing + 25.0),
+            (easting + 38.5, northing + 27.5),
+            (easting + 44.0, northing + 36.0),
+            (easting + 42.0, northing + 37.0),
+            (easting + 32.5, northing + 38.5),
+            (easting + 31.0, northing + 37.0),
+            (easting + 30.0, northing + 30.0),
         ],
-        house_base_elevation=10.0,
+        house_base_elevation=22.5,
         house_height=6.0,
     )
