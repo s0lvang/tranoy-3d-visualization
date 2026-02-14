@@ -64,7 +64,7 @@ def run(cfg: Config | None = None) -> None:
     show_3d_scene(
         terrain_mesh,
         house_mesh,
-        viewpoint_xyz,
+        cfg.center_xyz,
         osm_buildings_mesh=osm_buildings_mesh,
         osm_roads_mesh=osm_roads_mesh,
     )

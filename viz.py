@@ -86,7 +86,7 @@ def build_house_mesh(
 def show_3d_scene(
     terrain_mesh: pv.StructuredGrid,
     house_mesh: pv.PolyData | None,
-    viewpoint_xyz: tuple[float, float, float],
+    center_xyz: tuple[float, float, float],
     osm_buildings_mesh: pv.PolyData | None = None,
     osm_roads_mesh: pv.PolyData | None = None,
 ) -> None:
@@ -98,9 +98,13 @@ def show_3d_scene(
         pl.add_mesh(osm_roads_mesh, color="darkgray")
     if house_mesh is not None:
         pl.add_mesh(house_mesh, color="tan", opacity=0.9)
-    vx, vy, vz = viewpoint_xyz
+    vx, vy, vz = center_xyz
     pl.add_mesh(pv.Sphere(radius=2, center=(vx, vy, vz)), color="red")
     pl.add_axes()
+    pl.enable_terrain_style()
+    pl.camera.position = (vx + 100, vy, vz + 100)
+    pl.camera.focal_point = (vx, vy, vz)
+    pl.camera.up = (0, 0, 1)
     pl.show()
 
 
