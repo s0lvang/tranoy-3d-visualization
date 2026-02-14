@@ -6,7 +6,7 @@ import scipy.ndimage
 from shapely.geometry import LineString, Polygon
 
 
-def _sample_terrain(
+def sample_terrain(
     dtm: np.ndarray,
     transform: Any,
     x: float,
@@ -83,7 +83,7 @@ def compute_horizon_profile(
         while d <= max_distance:
             x = vx + d * dx
             y = vy + d * dy
-            z = _sample_terrain(dtm, transform, x, y)
+            z = sample_terrain(dtm, transform, x, y)
             if not np.isnan(z):
                 angle = math.degrees(math.atan2(z - vz, d))
                 max_angle = max(max_angle, angle)

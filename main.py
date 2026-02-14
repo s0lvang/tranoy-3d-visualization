@@ -1,7 +1,15 @@
 from config import Config, tranoy_example
 from dtm import fetch_dtm_raster, fetch_point_elevation
 from horizon import compute_horizon_profile, compute_obstruction
-from viz import build_house_mesh, build_terrain_mesh, plot_horizon_profiles, show_3d_scene
+from osm import fetch_osm_buildings, fetch_osm_roads
+from viz import (
+    build_house_mesh,
+    build_osm_buildings_mesh,
+    build_osm_roads_mesh,
+    build_terrain_mesh,
+    plot_horizon_profiles,
+    show_3d_scene,
+)
 
 
 def _bbox_from_config(cfg: Config) -> tuple[float, float, float, float]:
@@ -48,8 +56,18 @@ def run(cfg: Config | None = None) -> None:
     house_mesh = build_house_mesh(
         cfg.house_polygon, cfg.house_base_elevation, cfg.house_height
     )
+    buildings = fetch_osm_buildings(bbox)
+    roads = fetch_osm_roads(bbox)
+    osm_buildings_mesh = build_osm_buildings_mesh(buildings, dtm, transform)
+    osm_roads_mesh = build_osm_roads_mesh(roads, dtm, transform)
 
-    show_3d_scene(terrain_mesh, house_mesh, viewpoint_xyz)
+    show_3d_scene(
+        terrain_mesh,
+        house_mesh,
+        viewpoint_xyz,
+        osm_buildings_mesh=osm_buildings_mesh,
+        osm_roads_mesh=osm_roads_mesh,
+    )
     plot_horizon_profiles(profile_without, profile_with)
 
 

@@ -5,6 +5,8 @@ import numpy as np
 import pyvista as pv
 from rasterio.transform import Affine
 
+from horizon import sample_terrain
+
 
 def build_terrain_mesh(dtm: np.ndarray, transform: Any) -> pv.StructuredGrid:
     rows, cols = dtm.shape
@@ -18,6 +20,54 @@ def build_terrain_mesh(dtm: np.ndarray, transform: Any) -> pv.StructuredGrid:
         xx, yy = transform * (col_mesh, row_mesh)
     zz = np.where(np.isnan(dtm), 0.0, dtm).astype(np.float64)
     return pv.StructuredGrid(xx, yy, zz)
+
+
+def build_osm_buildings_mesh(
+    buildings: list[dict],
+    dtm: np.ndarray,
+    transform: Any,
+) -> pv.PolyData | None:
+    if not buildings:
+        return None
+    meshes = []
+    for b in buildings:
+        poly = b["polygon"]
+        if len(poly) < 3:
+            continue
+        cx = sum(p[0] for p in poly) / len(poly)
+        cy = sum(p[1] for p in poly) / len(poly)
+        base_z = sample_terrain(dtm, transform, cx, cy)
+        if np.isnan(base_z):
+            base_z = 0.0
+        mesh = build_house_mesh(poly, base_z, b["height"])
+        meshes.append(mesh)
+    return pv.merge(meshes) if meshes else None
+
+
+def build_osm_roads_mesh(
+    roads: list[dict],
+    dtm: np.ndarray,
+    transform: Any,
+    tube_radius: float = 1.0,
+    height_offset: float = 0.5,
+) -> pv.PolyData | None:
+    if not roads:
+        return None
+    meshes = []
+    for r in roads:
+        coords = r["coords"]
+        if len(coords) < 2:
+            continue
+        pts = []
+        for x, y in coords:
+            z = sample_terrain(dtm, transform, x, y)
+            z = height_offset if np.isnan(z) else z + height_offset
+            pts.append([x, y, z])
+        arr = np.array(pts, dtype=np.float64)
+        line = pv.lines_from_points(arr)
+        tube = line.tube(radius=tube_radius)
+        meshes.append(tube)
+    return pv.merge(meshes) if meshes else None
 
 
 def build_house_mesh(
@@ -37,9 +87,15 @@ def show_3d_scene(
     terrain_mesh: pv.StructuredGrid,
     house_mesh: pv.PolyData | None,
     viewpoint_xyz: tuple[float, float, float],
+    osm_buildings_mesh: pv.PolyData | None = None,
+    osm_roads_mesh: pv.PolyData | None = None,
 ) -> None:
     pl = pv.Plotter()
     pl.add_mesh(terrain_mesh, scalars=terrain_mesh.points[:, 2], cmap="terrain", show_scalar_bar=True)
+    if osm_buildings_mesh is not None:
+        pl.add_mesh(osm_buildings_mesh, color="gray", opacity=0.8)
+    if osm_roads_mesh is not None:
+        pl.add_mesh(osm_roads_mesh, color="darkgray")
     if house_mesh is not None:
         pl.add_mesh(house_mesh, color="tan", opacity=0.9)
     vx, vy, vz = viewpoint_xyz
