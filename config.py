@@ -17,18 +17,31 @@ class Config:
 def tranoy_example() -> Config:
     easting = 527304.36 
     northing = 7563388.55 
+    house_px= [
+    (291, 302),
+    (329, 272),
+    (436, 407),
+    (410, 429),
+    (395, 414),
+    (369, 433),
+    (304, 358),
+    (310, 355),
+    (304, 345),
+    (316, 331),
+    ]
+    dpi = 1
+    scale = 0.155  # 500 / dpi * 25.4  # mm to meters, or derive from grid spacing
+    # simpler: if grid spacing of 100 units = N pixels, then meters_per_pixel = (100 * 0.5) / N
+    img_h = 732
+
+    house_polygon = [
+    (easting + px * scale, northing + (img_h - py) * scale)
+    for px, py in house_px
+    ]
+
     return Config(
         viewpoint=(easting, northing),
-        house_polygon=[
-            (easting + 30.0, northing + 25.0),
-            (easting + 37.5, northing + 25.0),
-            (easting + 38.5, northing + 27.5),
-            (easting + 44.0, northing + 36.0),
-            (easting + 42.0, northing + 37.0),
-            (easting + 32.5, northing + 38.5),
-            (easting + 31.0, northing + 37.0),
-            (easting + 30.0, northing + 30.0),
-        ],
-        house_base_elevation=22.5,
-        house_height=6.0,
+        house_polygon=house_polygon,
+        house_base_elevation=21.0,
+        house_height=5.5,
     )
