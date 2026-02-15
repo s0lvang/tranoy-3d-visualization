@@ -110,7 +110,7 @@ def main():
         
         with layout.content:
             with vuetify3.VContainer(fluid=True, classes="pa-0 fill-height"):
-                view = plotter_ui(pl)
+                view = plotter_ui(pl, mode="client")
                 ctrl.view_reset_camera = view.reset_camera
     
     server.start(
