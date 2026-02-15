@@ -39,8 +39,10 @@ def tranoy_example() -> Config:
     scale = 0.155  # 500 / dpi * 25.4  # mm to meters, or derive from grid spacing
     # simpler: if grid spacing of 100 units = N pixels, then meters_per_pixel = (100 * 0.5) / N
     center_xyz = ( 527338.39, 7563433.25 , 21.0 + 5.5 / 2)
+    
+    nw_offset = 2.5 / (2 ** 0.5)
     house_polygon = [
-    (easting + px * scale, northing + (img_h - py) * scale)
+    (easting - nw_offset + px * scale, northing + nw_offset + (img_h - py) * scale)
     for px, py in house_px
     ]
 
