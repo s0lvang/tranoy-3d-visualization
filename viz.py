@@ -65,7 +65,7 @@ def build_osm_roads_mesh(
             pts.append([x, y, z])
         arr = np.array(pts, dtype=np.float64)
         line = pv.lines_from_points(arr)
-        tube = line.tube(radius=tube_radius)
+        tube = line.tube(radius=tube_radius, n_sides=6)
         meshes.append(tube)
     return pv.merge(meshes) if meshes else None
 

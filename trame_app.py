@@ -43,6 +43,7 @@ def create_plotter(cfg: Config):
     viewpoint_xyz = (cfg.viewpoint[0], cfg.viewpoint[1], eye_z)
     
     terrain_mesh = build_terrain_mesh(dtm, transform)
+    terrain_poly = terrain_mesh.extract_surface().triangulate().decimate(0.5)
     house_mesh = build_house_mesh(
         cfg.house_polygon, cfg.house_base_elevation, cfg.house_height
     )
@@ -53,8 +54,8 @@ def create_plotter(cfg: Config):
     
     pl = pv.Plotter()
     pl.add_mesh(
-        terrain_mesh,
-        scalars=terrain_mesh.points[:, 2],
+        terrain_poly,
+        scalars=terrain_poly.points[:, 2],
         cmap="terrain",
         show_scalar_bar=True,
         name="terrain"
@@ -109,7 +110,7 @@ def main():
         
         with layout.content:
             with vuetify3.VContainer(fluid=True, classes="pa-0 fill-height"):
-                view = plotter_ui(pl)
+                view = plotter_ui(pl, mode="client")
                 ctrl.view_reset_camera = view.reset_camera
     
     server.start(
