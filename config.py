@@ -9,7 +9,7 @@ class Config:
     house_base_elevation: float
     house_height: float
     eye_height: float = 1.6
-    analysis_radius: float = 200
+    analysis_radius: float = 100
     azimuth_step: float = 0.5
     dtm_resolution: float = 1.0
     koordsys: int = 25833
