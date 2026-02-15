@@ -70,10 +70,10 @@ def create_plotter(cfg: Config):
     vx, vy, vz = cfg.center_xyz
     pl.add_mesh(pv.Sphere(radius=2, center=(vx, vy, vz)), color="red", name="viewpoint")
     pl.add_axes()
-    pl.enable_terrain_style()
     pl.camera.position = (vx + 100, vy, vz + 100)
     pl.camera.focal_point = (vx, vy, vz)
     pl.camera.up = (0, 0, 1)
+    pl.enable_terrain_style(mouse_wheel_zooms=True, shift_pans=True)
     
     return pl
 
@@ -110,7 +110,7 @@ def main():
         
         with layout.content:
             with vuetify3.VContainer(fluid=True, classes="pa-0 fill-height"):
-                view = plotter_ui(pl, mode="client")
+                view = plotter_ui(pl)
                 ctrl.view_reset_camera = view.reset_camera
     
     server.start(
