@@ -1,10 +1,13 @@
+import json
 import re
+from pathlib import Path
 from typing import Any
 
 import pyproj
 import requests
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+DATA_DIR = Path("data/osm")
 WGS84 = pyproj.CRS.from_epsg(4326)
 UTM33 = pyproj.CRS.from_epsg(25833)
 WGS84_TO_UTM = pyproj.Transformer.from_crs(WGS84, UTM33, always_xy=True)
@@ -35,8 +38,31 @@ def _lonlat_to_utm(geom: list[dict]) -> list[tuple[float, float]]:
     return [WGS84_TO_UTM.transform(p["lon"], p["lat"])[:2] for p in geom]
 
 
+def _get_data_path(data_key: str) -> Path:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    return DATA_DIR / f"{data_key}.json"
+
+
+def _load_from_file(data_key: str) -> dict | None:
+    data_path = _get_data_path(data_key)
+    if data_path.exists():
+        return json.loads(data_path.read_text())
+    return None
+
+
+def _save_to_file(data_key: str, data: dict) -> None:
+    data_path = _get_data_path(data_key)
+    data_path.write_text(json.dumps(data, indent=2))
+
+
 def fetch_osm_buildings(bbox_25833: tuple[float, float, float, float]) -> list[dict]:
     south, west, north, east = _bbox_25833_to_wgs84(bbox_25833)
+    data_key = f"buildings_{south:.6f}_{west:.6f}_{north:.6f}_{east:.6f}"
+    
+    saved = _load_from_file(data_key)
+    if saved is not None:
+        return saved
+    
     query = f"""
     [out:json][timeout:60];
     (
@@ -59,11 +85,19 @@ def fetch_osm_buildings(bbox_25833: tuple[float, float, float, float]) -> list[d
             coords.append(coords[0])
         tags = el.get("tags", {})
         result.append({"polygon": coords, "height": _parse_height(tags)})
+    
+    _save_to_file(data_key, result)
     return result
 
 
 def fetch_osm_roads(bbox_25833: tuple[float, float, float, float]) -> list[dict]:
     south, west, north, east = _bbox_25833_to_wgs84(bbox_25833)
+    data_key = f"roads_{south:.6f}_{west:.6f}_{north:.6f}_{east:.6f}"
+    
+    saved = _load_from_file(data_key)
+    if saved is not None:
+        return saved
+    
     query = f"""
     [out:json][timeout:60];
     (
@@ -84,4 +118,6 @@ def fetch_osm_roads(bbox_25833: tuple[float, float, float, float]) -> list[dict]
         coords = _lonlat_to_utm(geom)
         tags = el.get("tags", {})
         result.append({"coords": coords, "highway": tags.get("highway", "unknown")})
+    
+    _save_to_file(data_key, result)
     return result
