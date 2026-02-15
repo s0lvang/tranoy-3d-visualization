@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Pick pixel coordinates</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    #drop { border: 2px dashed #ccc; padding: 2rem; text-align: center; margin-bottom: 1rem; cursor: pointer; }
+    #drop.dragover { border-color: #06c; background: #eef; }
+    canvas { max-width: 100%; cursor: crosshair; display: block; margin: 1rem 0; border: 1px solid #ddd; }
+    pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; font-size: 0.85rem; }
+    .hint { color: #666; margin-top: 1rem; }
+    .info { background: #e8f4f8; padding: 0.5rem 1rem; border-radius: 4px; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h2>Pick Pixel Coordinates</h2>
+  <div class="info">
+    <strong>Instructions:</strong> Drop or select your site plan image below. Click building corners in clockwise order, then click the viewpoint. Right-click to undo the last point.
+  </div>
+  <div id="drop">Drop site plan image here or click to select</div>
+  <input type="file" id="file" accept="image/*" style="display:none">
+  <canvas id="c"></canvas>
+  <p class="hint">Click building corners clockwise, then the viewpoint (last click). Right-click to undo.</p>
+  <pre id="out"></pre>
+  <script>
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('file');
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const out = document.getElementById('out');
+    let img = null, points = [], scale = 1;
+
+    drop.onclick = () => fileInput.click();
+    drop.ondragover = e => { e.preventDefault(); drop.classList.add('dragover'); };
+    drop.ondragleave = () => drop.classList.remove('dragover');
+    drop.ondrop = e => {
+      e.preventDefault();
+      drop.classList.remove('dragover');
+      if (e.dataTransfer.files.length) load(e.dataTransfer.files[0]);
+    };
+    fileInput.onchange = () => { if (fileInput.files.length) load(fileInput.files[0]); };
+
+    function load(file) {
+      const url = URL.createObjectURL(file);
+      const i = new Image();
+      i.onload = () => { 
+        URL.revokeObjectURL(url); 
+        img = i; 
+        points = []; 
+        draw(); 
+        updateOut(); 
+      };
+      i.src = url;
+    }
+
+    function draw() {
+      if (!img) return;
+      const maxW = 900, maxH = 700;
+      const r = Math.min(maxW / img.width, maxH / img.height, 1);
+      scale = r;
+      canvas.width = img.width * r;
+      canvas.height = img.height * r;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Draw points and lines
+      ctx.strokeStyle = '#f00';
+      ctx.fillStyle = '#f00';
+      ctx.lineWidth = 2;
+      ctx.font = '12px sans-serif';
+      
+      points.forEach((p, i) => {
+        const x = p.x * r, y = p.y * r;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillText(i + 1, x + 8, y + 4);
+      });
+      
+      if (points.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(points[0].x * r, points[0].y * r);
+        points.slice(1).forEach(p => ctx.lineTo(p.x * r, p.y * r));
+        ctx.stroke();
+      }
+    }
+
+    canvas.onclick = e => {
+      if (!img) return;
+      const r = canvas.getBoundingClientRect();
+      const x = Math.round((e.clientX - r.left) / scale);
+      const y = Math.round((e.clientY - r.top) / scale);
+      points.push({ x, y });
+      draw();
+      updateOut();
+    };
+
+    canvas.oncontextmenu = e => {
+      e.preventDefault();
+      if (points.length) { 
+        points.pop(); 
+        draw(); 
+        updateOut(); 
+      }
+    };
+
+    function updateOut() {
+      if (!img) return;
+      const w = img.width, h = img.height;
+      let s = `Image size: ${w} x ${h} px\n\n`;
+      
+      if (points.length) {
+        const last = points[points.length - 1];
+        const house = points.length > 1 ? points.slice(0, -1) : points;
+        
+        s += '# Copy these into config.py:\n';
+        s += 'house_px = [\n';
+        house.forEach(p => s += `    (${p.x}, ${p.y}),\n`);
+        s += ']\n';
+        s += 'viewpoint_px = ';
+        s += points.length > 1 
+          ? `(${last.x}, ${last.y})  # last click\n` 
+          : '(0, 0)  # click viewpoint after corners\n';
+        s += `\n# Image dimensions:\nimg_w, img_h = ${w}, ${h}\n`;
+      }
+      out.textContent = s;
+    }
+  </script>
+</body>
+</html>
